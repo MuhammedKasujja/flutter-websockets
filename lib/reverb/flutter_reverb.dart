@@ -18,6 +18,8 @@ abstract class ReverbService {
     String channelName, {
     bool isPrivate = false,
   });
+  void private(String channelName);
+  void channel(String channelName);
   void close();
 }
 
@@ -144,6 +146,16 @@ class FlutterReverb implements ReverbService {
       _logger.e('Authentication error: $e');
       return null;
     }
+  }
+
+  @override
+  void channel(String channelName) {
+    _subscribe(channelName, null, isPrivate: false);
+  }
+  
+  @override
+  void private(String channelName) {
+    // TODO: implement private
   }
 
   @override

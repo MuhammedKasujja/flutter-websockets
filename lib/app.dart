@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_websockets/reverb/flutter_reverb.dart';
 import 'package:flutter_websockets/reverb/reverb_options.dart';
+import 'package:flutter_websockets/service/web_socket_service.dart';
 import 'package:logger/logger.dart';
 
 final reverbHost = "192.168.65.100";
@@ -33,18 +34,31 @@ class _AppScreenState extends State<AppScreen> {
 
   @override
   void initState() {
-    final reverb = FlutterReverb(options: options);
+    // final reverb = FlutterReverb(options: options);
 
-    reverb.listen(
-      (message) {
-        logger.i("Received: ${message.event}, Data: ${message.data}");
-        logger.e("Received: ${message.toJson()}");
+    // reverb.listen(
+    //   (message) {
+    //     logger.i("Received: ${message.event}, Data: ${message.data}");
+    //     logger.e("Received: ${message.toJson()}");
+    //     setState(() {
+    //       data = message.data;
+    //     });
+    //   },
+    //   "sent-messages",
+    //   isPrivate: false,
+    // );
+
+    final websocket = WebSocketService.init(options);
+
+    websocket.listenChannel(
+      channelName: 'sent-messages',
+      onData: (response) {
+        logger.i("Received: ${response.event}, Data: ${response.data}");
+        logger.e("Received: ${response.toJson()}");
         setState(() {
-          data = message.data;
+          data = response.data;
         });
       },
-      "sent-messages",
-      isPrivate: false,
     );
 
     // Private channel
@@ -65,7 +79,10 @@ class _AppScreenState extends State<AppScreen> {
       body: ListView(
         shrinkWrap: true,
         children:
-            data?.entries.map((entry) => Text(entry.value)).toList() ?? [],
+            data?.entries
+                .map((entry) => Text(entry.value.toString()))
+                .toList() ??
+            [],
       ),
     );
   }

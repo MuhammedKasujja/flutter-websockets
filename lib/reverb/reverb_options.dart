@@ -18,4 +18,23 @@ class ReverbOptions {
     this.privatePrefix = 'private-',
     this.usePrefix = true,
   });
+
+  // Map<String, dynamic> toJson() {
+  //   return {
+  //     "scheme": scheme,
+  //     "host": host,
+  //     "port": port,
+  //     "appKey": appKey,
+  //     "authUrl": authUrl,
+  //     "privatePrefix": privatePrefix,
+  //   };
+  // }
+}
+
+enum Scheme {
+  ws('ws'),
+  wss('wss');
+
+  final String name;
+  const Scheme(this.name);
 }
