@@ -63,7 +63,7 @@ class FlutterReverb implements ReverbService {
 
   @override
   void listen(
-    void Function(dynamic) onData,
+    void Function(WebsocketResponse data) onData,
     String channelName, {
     bool isPrivate = false,
   }) {
@@ -167,5 +167,12 @@ class WebsocketResponse {
       event: json['event'],
       data: json['data'] != null ? jsonDecode(json['data']) : null,
     );
+  }
+
+  Map<String, dynamic> toJson(){
+    return {
+      "event":event,
+      "data": data
+    };
   }
 }

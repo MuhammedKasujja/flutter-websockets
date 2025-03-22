@@ -1,12 +1,9 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_websockets/reverb/flutter_reverb.dart';
 import 'package:flutter_websockets/reverb/reverb_options.dart';
 import 'package:logger/logger.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 
-final reverbHost = "192.168.100.35";
+final reverbHost = "192.168.65.100";
 final reverbPort = 8080;
 final reverbAppKey = "ox9bhbnatqbg6umj8qrj";
 
@@ -32,6 +29,8 @@ class _AppScreenState extends State<AppScreen> {
     usePrefix: true, // default: true
   );
 
+  Map<String, dynamic>? data;
+
   @override
   void initState() {
     final reverb = FlutterReverb(options: options);
@@ -39,6 +38,10 @@ class _AppScreenState extends State<AppScreen> {
     reverb.listen(
       (message) {
         logger.i("Received: ${message.event}, Data: ${message.data}");
+        logger.e("Received: ${message.toJson()}");
+        setState(() {
+          data = message.data;
+        });
       },
       "sent-messages",
       isPrivate: false,
@@ -52,39 +55,17 @@ class _AppScreenState extends State<AppScreen> {
     //   "public-channel",
     //   isPrivate: true,
     // );
-    // _testReverb();
     super.initState();
-  }
-
-  void _testReverb() {
-    final wsUrl = 'ws://$reverbHost:$reverbPort/app/$reverbAppKey';
-    final channel = WebSocketChannel.connect(Uri.parse(wsUrl));
-    final subscription = {
-      "event": "pusher:subscribe",
-      "data": {"channel": "sent-messages"},
-    };
-    channel.sink.add(jsonEncode(subscription));
-    channel.stream.listen(
-      (message) {
-        logger.d('Received: $message');
-      },
-      onDone: () {
-        logger.i('Connection closed.');
-      },
-
-      onError: (error) {
-        logger.e('Error: $error');
-      },
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Flutter sockets')),
-      body: ListView(children: [
-          
-        ],
+      body: ListView(
+        shrinkWrap: true,
+        children:
+            data?.entries.map((entry) => Text(entry.value)).toList() ?? [],
       ),
     );
   }
