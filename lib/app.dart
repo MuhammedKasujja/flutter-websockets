@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_websockets/reverb/flutter_reverb.dart';
 import 'package:flutter_websockets/reverb/reverb_options.dart';
-import 'package:flutter_websockets/service/web_socket_service.dart';
+import 'package:flutter_websockets/service/websocket_service.dart';
 import 'package:logger/logger.dart';
 
 final reverbHost = "192.168.65.100";
@@ -48,7 +48,7 @@ class _AppScreenState extends State<AppScreen> {
     //   isPrivate: false,
     // );
 
-    final websocket = WebSocketService.init(options);
+    final websocket = WebsocketService.init(options);
 
     websocket.listenChannel(
       channelName: 'sent-messages',

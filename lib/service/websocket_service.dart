@@ -1,14 +1,14 @@
 import 'package:flutter_websockets/reverb/flutter_reverb.dart';
 import 'package:flutter_websockets/reverb/reverb_options.dart';
 
-class WebSocketService {
+class WebsocketService {
   late FlutterReverb _flutterReverb;
 
-  static final WebSocketService _instance = WebSocketService._internal();
+  static final WebsocketService _instance = WebsocketService._internal();
 
-  WebSocketService._internal();
+  WebsocketService._internal();
 
-  factory WebSocketService.init(ReverbOptions options) {
+  factory WebsocketService.init(ReverbOptions options) {
     _instance._flutterReverb = FlutterReverb(options: options);
     return _instance;
   }
