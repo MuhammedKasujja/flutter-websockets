@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_websockets/reverb/flutter_reverb.dart';
+import 'package:flutter_websockets/reverb/flutter_reverb_revisted.dart';
 import 'package:flutter_websockets/reverb/reverb_options.dart';
 import 'package:flutter_websockets/service/websocket_service.dart';
 import 'package:logger/logger.dart';
 
-final reverbHost = "192.168.65.100";
+// final reverbHost = "192.168.65.100";
+final reverbHost = "127.0.0.1";
 final reverbPort = 8080;
 final reverbAppKey = "ox9bhbnatqbg6umj8qrj";
 
@@ -32,43 +34,34 @@ class _AppScreenState extends State<AppScreen> {
 
   Map<String, dynamic>? data;
 
+  late WebsocketService websocket;
+
   @override
   void initState() {
-    // final reverb = FlutterReverb(options: options);
+    websocket = WebsocketService.init(options);
 
-    // reverb.listen(
-    //   (message) {
-    //     logger.i("Received: ${message.event}, Data: ${message.data}");
-    //     logger.e("Received: ${message.toJson()}");
-    //     setState(() {
-    //       data = message.data;
-    //     });
-    //   },
-    //   "sent-messages",
-    //   isPrivate: false,
-    // );
+    websocket.channel('sent-messages').listen((response) {
+      logger.i("Received: ${response.event}, Data: ${response.data}");
+      setState(() {
+        data = response.data;
+      });
+    });
 
-    final websocket = WebsocketService.init(options);
+    // websocket.notifications((response) {
+    //   logger.i("Received Notification: ${response.event}, Data: ${response.data}");
+    //   setState(() {
+    //     data = response.data;
+    //   });
+    // });
 
-    websocket.listenChannel(
-      channelName: 'sent-messages',
-      onData: (response) {
-        logger.i("Received: ${response.event}, Data: ${response.data}");
-        logger.e("Received: ${response.toJson()}");
-        setState(() {
-          data = response.data;
-        });
-      },
-    );
+    // websocket.private('sent-messages-data').listen((response) {
+    //   logger.i("Received: ${response.event}, Data: ${response.data}");
+    //   logger.e("Received: with chaining}");
+    //   setState(() {
+    //     data = response.data;
+    //   });
+    // });
 
-    // Private channel
-    // reverb.listen(
-    //   (message) {
-    //     print("Received: ${message.event}, Data: ${message.data}");
-    //   },
-    //   "public-channel",
-    //   isPrivate: true,
-    // );
     super.initState();
   }
 
@@ -83,6 +76,12 @@ class _AppScreenState extends State<AppScreen> {
                 .map((entry) => Text(entry.value.toString()))
                 .toList() ??
             [],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          websocket.reconnect();
+        },
+        label: Icon(Icons.refresh),
       ),
     );
   }

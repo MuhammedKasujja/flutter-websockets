@@ -1,42 +1,25 @@
+import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter_websockets/reverb/reverb_options.dart';
+import 'package:collection/collection.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:web_socket_channel/status.dart' as status;
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-abstract class ReverbService {
-  void listen(
-    void Function(dynamic) onData,
-    String channelName, {
-    bool isPrivate = false,
-  });
-  ReverbService private(String channelName);
-  ReverbService channel(String channelName);
-  void close();
-}
+import 'package:flutter_websockets/reverb/flutter_reverb.dart';
+import 'package:flutter_websockets/reverb/reverb_options.dart';
 
-/// Example
-/// ```
-/// final reverb = FlutterReverb(options: options);
-/// 
-/// reverb.listen(
-///   (response) {
-///     logger.i("Received: ${response.event}, Data: ${response.data}");
-///     logger.e("Received: ${response.toJson()}");
-///   },
-///   "sent-messages",
-///   isPrivate: false,
-/// );
-/// ```
-
-class FlutterReverb implements ReverbService {
+class FlutterReverbImp implements ReverbService {
   late final WebSocketChannel _channel;
   final ReverbOptions options;
   final Logger _logger = Logger();
+  StreamSubscription? _subscription;
+  final StreamController<Map<String, dynamic>> _messageStreamController =
+      StreamController.broadcast();
+  final List<Channel> _connectedChannels = [];
 
-  FlutterReverb({required this.options}) {
+  FlutterReverbImp({required this.options}) {
     try {
       final wsUrl = _constructWebSocketUrl();
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
@@ -81,7 +64,7 @@ class FlutterReverb implements ReverbService {
       final fullChannelName =
           isPrivate ? '$channelPrefix$channelName' : channelName;
       _subscribe(channelName, null);
-      _channel.stream.listen(
+      _subscription = _channel.stream.listen(
         (message) async {
           try {
             final Map<String, dynamic> jsonMessage = jsonDecode(message);
@@ -155,19 +138,41 @@ class FlutterReverb implements ReverbService {
   }
 
   @override
-  FlutterReverb channel(String channelName) {
-    _subscribe(channelName, null, isPrivate: false);
+  FlutterReverbImp channel(String channelName) {
+    _addChannels(Channel(name: channelName, isPrivate: false));
     return this;
   }
 
   @override
-  FlutterReverb private(String channelName) {
+  FlutterReverbImp private(String channelName) {
+    _addChannels(Channel(name: channelName, isPrivate: true));
     return this;
+  }
+
+  void stream(void Function(WebsocketResponse data) onData) {
+    final lastChannel = _connectedChannels.last;
+    listen(onData, lastChannel.name, isPrivate: lastChannel.isPrivate);
+  }
+
+  void _addChannels(Channel channel) {
+    final storedChannel = _connectedChannels.firstWhereOrNull(
+      (ele) => ele.name == channel.name,
+    );
+    if (storedChannel == null) {
+      _connectedChannels.add(channel);
+    }
+  }
+
+  void reconnect() {
+    for (var channel in _connectedChannels) {
+      _logger.i(channel.toJson());
+    }
   }
 
   @override
   void close() {
     try {
+      _subscription?.cancel();
       _channel.sink.close(status.goingAway);
     } catch (e) {
       _logger.e('Failed to close WebSocket: $e');
@@ -175,20 +180,13 @@ class FlutterReverb implements ReverbService {
   }
 }
 
-class WebsocketResponse {
-  final String event;
-  final Map<String, dynamic>? data;
+class Channel {
+  final String name;
+  final bool isPrivate;
 
-  WebsocketResponse({required this.event, this.data});
-
-  factory WebsocketResponse.fromJson(Map<String, dynamic> json) {
-    return WebsocketResponse(
-      event: json['event'],
-      data: json['data'] != null ? jsonDecode(json['data']) : null,
-    );
-  }
+  Channel({required this.name, this.isPrivate = false});
 
   Map<String, dynamic> toJson() {
-    return {"event": event, "data": data};
+    return {"name": name, "isPrivate": isPrivate};
   }
 }

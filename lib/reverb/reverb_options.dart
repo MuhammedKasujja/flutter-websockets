@@ -1,9 +1,12 @@
+import 'dart:async';
+
 class ReverbOptions {
   final String scheme;
   final String host;
   final String port;
   final String appKey;
-  final dynamic authToken;
+  // final dynamic authToken;
+  final FutureOr<String>? authToken;
   final String? authUrl;
   final String privatePrefix;
   final bool usePrefix;
